@@ -1,0 +1,112 @@
+@import './layout.css';
+@import './components.css';
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary:    #0f0f0f;
+  --bg-secondary:  #161616;
+  --bg-card:       #1e1e1e;
+  --bg-hover:      #252525;
+  --border:        rgba(255,255,255,0.08);
+  --border-active: rgba(181,172,151,0.4);
+  --text-primary:  #f0f0f0;
+  --text-secondary:#a0a0a0;
+  --text-muted:    #606060;
+  --gold:          #b5ac97;
+  --gold-dark:     #8a7f6a;
+  --success:       #4ade80;
+  --error:         #f87171;
+  --warning:       #fbbf24;
+  --radius:        6px;
+  --transition:    all 0.2s ease;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--gold);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #0f0f0f;
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover { background: var(--gold-dark); color: #fff; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 10px 24px;
+  border-radius: var(--radius);
+}
+
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid rgba(248,113,113,0.3);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+h2, h3, h4 {
+  margin-bottom: 8px;
+}
+
+p.muted, .muted {
+  color: var(--text-secondary);
+}
