@@ -6,6 +6,24 @@ import { query } from '../db/index.js'
 
 const router = Router()
 
+router.post('/setup', async (req, res) => {
+  try {
+    const { rows: existing } = await query('SELECT id FROM admin_users')
+    if (existing.length > 0) {
+      return res.status(403).json({ error: 'Setup ja foi executado.' })
+    }
+    const { email, password, name } = req.body
+    const hash = await bcrypt.hash(password, 12)
+    const { rows } = await query(
+      'INSERT INTO admin_users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name',
+      [email, hash, name]
+    )
+    res.json({ created: true, user: rows[0] })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
