@@ -6,6 +6,7 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: '0.0.0.0',
+    allowedHosts: ['site-beta-atelier-production.up.railway.app', 'betaatelier.com', 'www.betaatelier.com'],
   },
   build: {
     chunkSizeWarningLimit: 600,
