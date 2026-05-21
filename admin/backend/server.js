@@ -49,6 +49,20 @@ async function init() {
     await pool.query('SELECT 1')
     console.log('[DB] PostgreSQL conectado.')
 
+    // Executa a migration automaticamente
+    const { readFileSync } = await import('fs')
+    const { fileURLToPath } = await import('url')
+    const { dirname, join } = await import('path')
+    const __dirname = dirname(fileURLToPath(import.meta.url))
+    const migrationSQL = readFileSync(
+      join(__dirname, 'src/db/migrations/001_initial.sql'),
+      'utf8'
+    )
+    await pool.query(migrationSQL)
+    console.log('[DB] Migration executada.')
+
+    // Resto do codigo init() existente continua aqui...
+
     // Cria o utilizador admin se nao existir
     const { rows } = await query(
       'SELECT id FROM admin_users WHERE email = $1',
