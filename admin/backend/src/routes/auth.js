@@ -24,6 +24,21 @@ router.post('/setup', async (req, res) => {
   }
 })
 
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body
+    const hash = await bcrypt.hash(newPassword, 12)
+    const { rows } = await query(
+      'UPDATE admin_users SET password = $1 WHERE email = $2 RETURNING id, email',
+      [hash, email]
+    )
+    if (!rows[0]) return res.status(404).json({ error: 'Utilizador nao encontrado' })
+    res.json({ updated: true, user: rows[0] })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
