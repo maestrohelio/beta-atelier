@@ -5,6 +5,34 @@ import MediaPickerModal from '../components/MediaPickerModal'
 import Toast from '../components/Toast'
 
 const IMAGE_KEYS = ['image', 'photo', 'background', 'bg', 'hero_image', 'card_image', 'thumb']
+const FIELD_LABELS = {
+  title: 'Título',
+  subtitle: 'Subtítulo',
+  label: 'Etiqueta / Label',
+  text: 'Texto',
+  text1: 'Texto 1',
+  text2: 'Texto 2',
+  cta: 'Botão de Acção',
+  cta_primary: 'Botão Principal',
+  cta_secondary: 'Botão Secundário',
+  hero_image: 'Imagem de Fundo',
+  section_image: 'Imagem da Secção',
+  step1_title: 'Passo 1 — Título',
+  step1_text: 'Passo 1 — Texto',
+  step2_title: 'Passo 2 — Título',
+  step2_text: 'Passo 2 — Texto',
+  step3_title: 'Passo 3 — Título',
+  step3_text: 'Passo 3 — Texto',
+  step4_title: 'Passo 4 — Título',
+  step4_text: 'Passo 4 — Texto',
+  stat1_value: 'Estatística 1 — Valor',
+  stat1_label: 'Estatística 1 — Label',
+  stat2_value: 'Estatística 2 — Valor',
+  stat2_label: 'Estatística 2 — Label',
+  stat3_value: 'Estatística 3 — Valor',
+  stat3_label: 'Estatística 3 — Label',
+  horario: 'Horário de Atendimento',
+}
 
 const isImageField = (key) => (
   IMAGE_KEYS.includes(key)
@@ -15,6 +43,7 @@ const isImageField = (key) => (
 )
 
 const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
+const getFieldLabel = (key) => FIELD_LABELS[key] || key
 
 export default function Content() {
   const [pages, setPages] = useState([])
@@ -222,7 +251,7 @@ export default function Content() {
                     const shouldUseTextarea = String(value).includes('\n') || String(value).length > 120
                     return (
                       <div key={`${section.id}-${key}`} className="field-group">
-                        <label>{`content.${key}`}</label>
+                        <label>{getFieldLabel(key)}</label>
 
                         {isImageField(key) ? (
                           <div>

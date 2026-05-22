@@ -27,7 +27,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const { user, signout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://site-beta-atelier-production.up.railway.app'
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://betaatelier.com'
 
   const title = useMemo(() => TITLE_MAP[pathname] ?? 'Painel Administrativo', [pathname])
 
