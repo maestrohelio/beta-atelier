@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getPage, getPages, updateSection } from '../api/content'
 import { getSettings, publishSettings } from '../api/settings'
-import MediaPickerModal from '../components/MediaPickerModal'
 import Toast from '../components/Toast'
 
-const IMAGE_KEYS = ['image', 'photo', 'background', 'bg', 'hero_image', 'card_image', 'thumb']
+const HIDDEN_IMAGE_FIELDS = new Set(['hero_image', 'section_image', 'image', 'photo', 'background', 'bg', 'card_image', 'thumb'])
 const FIELD_LABELS = {
   title: 'Título',
   subtitle: 'Subtítulo',
@@ -34,41 +33,14 @@ const FIELD_LABELS = {
   horario: 'Horário de Atendimento',
 }
 
-const isImageField = (key) => (
-  IMAGE_KEYS.includes(key)
+const getFieldLabel = (key) => FIELD_LABELS[key] || key
+const shouldHideField = (key) => (
+  HIDDEN_IMAGE_FIELDS.has(key)
   || key.endsWith('_image')
   || key.endsWith('_img')
   || key.endsWith('_photo')
   || key.endsWith('_bg')
 )
-
-const getFieldLabel = (key) => FIELD_LABELS[key] || key
-const normalizeImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
-    return url.replace(
-      /^http:\/\/(localhost|127\.0\.0\.1):\d+/,
-      import.meta.env.VITE_ADMIN_API_BASE
-      || import.meta.env.VITE_API_URL
-      || 'https://api.betaatelier.com',
-    )
-  }
-  return url
-}
-const getImageSrc = (value) => {
-  if (!value) return null
-  if (value.startsWith('http://') || value.startsWith('https://')) return value
-  const base = import.meta.env.VITE_ADMIN_API_BASE
-    || import.meta.env.VITE_API_URL
-    || 'https://api.betaatelier.com'
-  return `${base}/uploads/${value}`
-}
-
-const normalizeContentImages = (content = {}) => Object.entries(content).reduce((acc, [key, value]) => {
-  const normalizedValue = value === null || value === undefined ? '' : String(value)
-  acc[key] = isImageField(key) ? normalizeImageUrl(normalizedValue) : normalizedValue
-  return acc
-}, {})
 
 export default function Content() {
   const [pages, setPages] = useState([])
@@ -80,7 +52,6 @@ export default function Content() {
   const [savingId, setSavingId] = useState(null)
   const [publishing, setPublishing] = useState(false)
   const [lastPublished, setLastPublished] = useState(null)
-  const [pickerField, setPickerField] = useState(null)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -134,7 +105,11 @@ export default function Content() {
         const edits = {}
         ;(data.sections ?? []).forEach((section) => {
           const content = typeof section.content === 'object' && section.content ? section.content : {}
-          const normalizedContent = normalizeContentImages(content)
+          const normalizedContent = Object.entries(content).reduce((acc, [key, value]) => {
+            if (value === null || value === undefined) acc[key] = ''
+            else acc[key] = String(value)
+            return acc
+          }, {})
 
           if (Object.keys(normalizedContent).length === 0) {
             normalizedContent.body = ''
@@ -173,14 +148,13 @@ export default function Content() {
   }
 
   const updateFieldValue = (sectionId, key, value) => {
-    const normalizedValue = isImageField(key) ? normalizeImageUrl(value) : value
     setSectionEdits((prev) => ({
       ...prev,
       [sectionId]: {
         ...prev[sectionId],
         content: {
           ...(prev[sectionId]?.content ?? {}),
-          [key]: normalizedValue,
+          [key]: value,
         },
       },
     }))
@@ -192,10 +166,9 @@ export default function Content() {
 
     setSavingId(sectionId)
     try {
-      const normalizedContent = normalizeContentImages(edit.content ?? {})
       await updateSection(sectionId, {
         title: edit.title,
-        content: normalizedContent,
+        content: edit.content ?? {},
       })
       setToast({ type: 'success', message: 'Secção guardada com sucesso.' })
     } catch {
@@ -256,7 +229,7 @@ export default function Content() {
                 title: '',
                 content: { body: '' },
               }
-              const contentEntries = Object.entries(edit.content ?? {})
+              const contentEntries = Object.entries(edit.content ?? {}).filter(([key]) => !shouldHideField(key))
 
               return (
                 <article key={section.id} className="card section-card">
@@ -272,66 +245,10 @@ export default function Content() {
 
                   {contentEntries.map(([key, value]) => {
                     const shouldUseTextarea = String(value).includes('\n') || String(value).length > 120
-                    const displayValue = isImageField(key) ? normalizeImageUrl(value) : value
-                    const imageSrc = isImageField(key) ? getImageSrc(displayValue) : null
                     return (
                       <div key={`${section.id}-${key}`} className="field-group">
                         <label>{getFieldLabel(key)}</label>
-
-                        {isImageField(key) ? (
-                          <div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>
-                              Imagem atual:
-                            </p>
-
-                            {displayValue && imageSrc && (
-                              <img
-                                src={imageSrc}
-                                alt="Imagem atual"
-                                style={{
-                                  maxHeight: 120,
-                                  maxWidth: '100%',
-                                  objectFit: 'cover',
-                                  borderRadius: 4,
-                                  border: '1px solid var(--border)',
-                                  display: 'block',
-                                  marginBottom: 8,
-                                }}
-                                onError={(e) => {
-                                  e.target.style.display = 'none'
-                                  e.target.nextSibling && (e.target.nextSibling.style.display = 'flex')
-                                }}
-                              />
-                            )}
-                            <div
-                              style={{
-                                height: 80,
-                                background: 'var(--bg-secondary)',
-                                borderRadius: 4,
-                                border: '1px solid var(--border)',
-                                display: imageSrc ? 'none' : 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'var(--text-muted)',
-                                fontSize: 12,
-                                padding: '0 10px',
-                                textAlign: 'center',
-                                marginBottom: 8,
-                              }}
-                            >
-                              {displayValue || 'Sem imagem'}
-                            </div>
-
-                            <button
-                              type="button"
-                              className="btn-ghost"
-                              style={{ fontSize: 12, padding: '6px 14px' }}
-                              onClick={() => setPickerField({ sectionId: section.id, fieldKey: key })}
-                            >
-                              Substituir Imagem
-                            </button>
-                          </div>
-                        ) : shouldUseTextarea ? (
+                        {shouldUseTextarea ? (
                           <textarea
                             rows={5}
                             value={value}
@@ -370,16 +287,6 @@ export default function Content() {
       <p className="publish-meta">
         Última publicação: {lastPublished ? new Date(lastPublished).toLocaleString('pt-PT') : 'Ainda não publicada'}
       </p>
-
-      {pickerField && (
-        <MediaPickerModal
-          onClose={() => setPickerField(null)}
-          onSelect={(mediaItem) => {
-            updateFieldValue(pickerField.sectionId, pickerField.fieldKey, mediaItem.url)
-            setPickerField(null)
-          }}
-        />
-      )}
 
       <Toast toast={toast} onClose={() => setToast(null)} />
     </>

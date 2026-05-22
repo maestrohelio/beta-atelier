@@ -214,4 +214,28 @@ router.get('/debug-uploads', requireAuth, async (_req, res) => {
   }
 })
 
+router.post('/remove-image-fields', requireAuth, async (_req, res) => {
+  try {
+    const { rows } = await query('SELECT id, content FROM sections')
+    let count = 0
+    for (const row of rows) {
+      const content = typeof row.content === 'string'
+        ? JSON.parse(row.content)
+        : { ...row.content }
+
+      delete content.hero_image
+      delete content.section_image
+
+      await query(
+        'UPDATE sections SET content = $1 WHERE id = $2',
+        [JSON.stringify(content), row.id],
+      )
+      count++
+    }
+    res.json({ success: true, cleaned: count })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
