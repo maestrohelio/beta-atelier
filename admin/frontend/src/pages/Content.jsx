@@ -44,6 +44,24 @@ const isImageField = (key) => (
 
 const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
 const getFieldLabel = (key) => FIELD_LABELS[key] || key
+const normalizeImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+    return url.replace(
+      /^http:\/\/(localhost|127\.0\.0\.1):\d+/,
+      import.meta.env.VITE_ADMIN_API_BASE
+      || import.meta.env.VITE_API_URL
+      || 'https://api.betaatelier.com',
+    )
+  }
+  return url
+}
+
+const normalizeContentImages = (content = {}) => Object.entries(content).reduce((acc, [key, value]) => {
+  const normalizedValue = value === null || value === undefined ? '' : String(value)
+  acc[key] = isImageField(key) ? normalizeImageUrl(normalizedValue) : normalizedValue
+  return acc
+}, {})
 
 export default function Content() {
   const [pages, setPages] = useState([])
@@ -109,11 +127,7 @@ export default function Content() {
         const edits = {}
         ;(data.sections ?? []).forEach((section) => {
           const content = typeof section.content === 'object' && section.content ? section.content : {}
-          const normalizedContent = Object.entries(content).reduce((acc, [key, value]) => {
-            if (value === null || value === undefined) acc[key] = ''
-            else acc[key] = String(value)
-            return acc
-          }, {})
+          const normalizedContent = normalizeContentImages(content)
 
           if (Object.keys(normalizedContent).length === 0) {
             normalizedContent.body = ''
@@ -152,13 +166,14 @@ export default function Content() {
   }
 
   const updateFieldValue = (sectionId, key, value) => {
+    const normalizedValue = isImageField(key) ? normalizeImageUrl(value) : value
     setSectionEdits((prev) => ({
       ...prev,
       [sectionId]: {
         ...prev[sectionId],
         content: {
           ...(prev[sectionId]?.content ?? {}),
-          [key]: value,
+          [key]: normalizedValue,
         },
       },
     }))
@@ -170,9 +185,10 @@ export default function Content() {
 
     setSavingId(sectionId)
     try {
+      const normalizedContent = normalizeContentImages(edit.content ?? {})
       await updateSection(sectionId, {
         title: edit.title,
-        content: edit.content ?? {},
+        content: normalizedContent,
       })
       setToast({ type: 'success', message: 'Secção guardada com sucesso.' })
     } catch {
@@ -249,6 +265,7 @@ export default function Content() {
 
                   {contentEntries.map(([key, value]) => {
                     const shouldUseTextarea = String(value).includes('\n') || String(value).length > 120
+                    const displayValue = isImageField(key) ? normalizeImageUrl(value) : value
                     return (
                       <div key={`${section.id}-${key}`} className="field-group">
                         <label>{getFieldLabel(key)}</label>
@@ -259,9 +276,9 @@ export default function Content() {
                               Imagem atual:
                             </p>
 
-                            {isHttpUrl(value) ? (
+                            {isHttpUrl(displayValue) ? (
                               <img
-                                src={value}
+                                src={displayValue}
                                 alt="Imagem atual"
                                 style={{
                                   maxHeight: 120,
@@ -290,7 +307,7 @@ export default function Content() {
                                   marginBottom: 8,
                                 }}
                               >
-                                {value || 'Sem imagem'}
+                                {displayValue || 'Sem imagem'}
                               </div>
                             )}
 

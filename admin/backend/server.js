@@ -29,7 +29,14 @@ app.use(express.urlencoded({ extended: true }))
 
 // Serve as imagens uploaded estaticamente
 const uploadDir = path.resolve(__dirname, process.env.UPLOAD_DIR ?? './uploads')
-app.use('/uploads', express.static(uploadDir))
+app.use('/uploads', async (req, res, next) => {
+  const filePath = path.join(uploadDir, req.path)
+  const fs = await import('fs')
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Imagem nao encontrada' })
+  }
+  return next()
+}, express.static(uploadDir))
 
 // Rotas
 app.use('/api/auth', authRoutes)

@@ -52,3 +52,16 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## Configurar Volume para Uploads na Railway
+
+1. Vai a Railway > servico backend-beta-atelier > Settings
+2. Clica em "Add Volume"
+3. Mount path: /app/uploads
+4. Guarda e faz redeploy
+5. Apos o redeploy, executa localmente:
+
+```bash
+cd admin/backend
+node src/db/migrate_images_to_production.js
+```
