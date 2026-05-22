@@ -106,4 +106,27 @@ router.post('/run-seeds', requireAuth, async (_req, res) => {
   }
 })
 
+router.post('/fix-media-urls', requireAuth, async (req, res) => {
+  try {
+    const OLD_BASE = 'http://localhost:3001'
+    const NEW_BASE = req.body.newBase || 'https://api.betaatelier.com'
+
+    const { rows } = await query(
+      'SELECT id, url FROM media WHERE url LIKE $1',
+      [`${OLD_BASE}%`],
+    )
+
+    let count = 0
+    for (const row of rows) {
+      const newUrl = row.url.replace(OLD_BASE, NEW_BASE)
+      await query('UPDATE media SET url = $1 WHERE id = $2', [newUrl, row.id])
+      count++
+    }
+
+    res.json({ success: true, updated: count })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
