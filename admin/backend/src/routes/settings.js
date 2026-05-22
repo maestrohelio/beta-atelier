@@ -88,4 +88,22 @@ router.post('/publish', requireAuth, async (_req, res) => {
   }
 })
 
+router.post('/run-seeds', requireAuth, async (_req, res) => {
+  try {
+    const { readFileSync } = await import('fs')
+    const { fileURLToPath } = await import('url')
+    const { dirname, join } = await import('path')
+    const __dirname = dirname(fileURLToPath(import.meta.url))
+
+    const sql002 = readFileSync(
+      join(__dirname, '../db/migrations/002_sections_seed.sql'), 'utf8',
+    )
+    await query(sql002)
+
+    res.json({ success: true, message: 'Seeds executados com sucesso.' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router

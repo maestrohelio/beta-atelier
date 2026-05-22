@@ -27,6 +27,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const { user, signout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://site-beta-atelier-production.up.railway.app'
 
   const title = useMemo(() => TITLE_MAP[pathname] ?? 'Painel Administrativo', [pathname])
 
@@ -103,7 +104,7 @@ export default function Layout() {
           </div>
 
           <div className="topbar-right">
-            <a href="http://localhost:5174" target="_blank" rel="noopener noreferrer" className="btn-ghost">
+            <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost">
               Ver Site
             </a>
             <div className="avatar">
