@@ -42,7 +42,6 @@ const isImageField = (key) => (
   || key.endsWith('_bg')
 )
 
-const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
 const getFieldLabel = (key) => FIELD_LABELS[key] || key
 const normalizeImageUrl = (url) => {
   if (!url) return ''
@@ -55,6 +54,14 @@ const normalizeImageUrl = (url) => {
     )
   }
   return url
+}
+const getImageSrc = (value) => {
+  if (!value) return null
+  if (value.startsWith('http://') || value.startsWith('https://')) return value
+  const base = import.meta.env.VITE_ADMIN_API_BASE
+    || import.meta.env.VITE_API_URL
+    || 'https://api.betaatelier.com'
+  return `${base}/uploads/${value}`
 }
 
 const normalizeContentImages = (content = {}) => Object.entries(content).reduce((acc, [key, value]) => {
@@ -266,6 +273,7 @@ export default function Content() {
                   {contentEntries.map(([key, value]) => {
                     const shouldUseTextarea = String(value).includes('\n') || String(value).length > 120
                     const displayValue = isImageField(key) ? normalizeImageUrl(value) : value
+                    const imageSrc = isImageField(key) ? getImageSrc(displayValue) : null
                     return (
                       <div key={`${section.id}-${key}`} className="field-group">
                         <label>{getFieldLabel(key)}</label>
@@ -276,9 +284,9 @@ export default function Content() {
                               Imagem atual:
                             </p>
 
-                            {isHttpUrl(displayValue) ? (
+                            {displayValue && imageSrc && (
                               <img
-                                src={displayValue}
+                                src={imageSrc}
                                 alt="Imagem atual"
                                 style={{
                                   maxHeight: 120,
@@ -289,27 +297,30 @@ export default function Content() {
                                   display: 'block',
                                   marginBottom: 8,
                                 }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  height: 80,
-                                  background: 'var(--bg-secondary)',
-                                  borderRadius: 4,
-                                  border: '1px solid var(--border)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: 'var(--text-muted)',
-                                  fontSize: 12,
-                                  padding: '0 10px',
-                                  textAlign: 'center',
-                                  marginBottom: 8,
+                                onError={(e) => {
+                                  e.target.style.display = 'none'
+                                  e.target.nextSibling && (e.target.nextSibling.style.display = 'flex')
                                 }}
-                              >
-                                {displayValue || 'Sem imagem'}
-                              </div>
+                              />
                             )}
+                            <div
+                              style={{
+                                height: 80,
+                                background: 'var(--bg-secondary)',
+                                borderRadius: 4,
+                                border: '1px solid var(--border)',
+                                display: imageSrc ? 'none' : 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--text-muted)',
+                                fontSize: 12,
+                                padding: '0 10px',
+                                textAlign: 'center',
+                                marginBottom: 8,
+                              }}
+                            >
+                              {displayValue || 'Sem imagem'}
+                            </div>
 
                             <button
                               type="button"

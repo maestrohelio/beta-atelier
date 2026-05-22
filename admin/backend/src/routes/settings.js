@@ -134,22 +134,23 @@ router.post('/restore-image-fields', requireAuth, async (req, res) => {
     const BASE = 'https://api.betaatelier.com/uploads'
 
     const imageUpdates = [
-      { pageSlug: 'home', sectionSlug: 'hero', field: 'hero_image', file: 'cadeiras-hero.jpg' },
-      { pageSlug: 'cadeiras', sectionSlug: 'hero', field: 'hero_image', file: 'cadeiras-hero.jpg' },
-      { pageSlug: 'cadeiras', sectionSlug: 'intro', field: 'section_image', file: 'cadeira-destaque.jpg' },
-      { pageSlug: 'cortinados', sectionSlug: 'hero', field: 'hero_image', file: 'galeria-cortinado-01.jpg' },
-      { pageSlug: 'cortinados', sectionSlug: 'intro', field: 'section_image', file: 'galeria-cortinado-02.jpg' },
-      { pageSlug: 'pulpitos', sectionSlug: 'hero', field: 'hero_image', file: 'galeria-pulpito-01.jpg' },
-      { pageSlug: 'pulpitos', sectionSlug: 'intro', field: 'section_image', file: 'pulpito-local-03.jpg' },
-      { pageSlug: 'restauro', sectionSlug: 'hero', field: 'hero_image', file: 'restauro-sofa-depois.jpg' },
-      { pageSlug: 'restauro', sectionSlug: 'intro', field: 'section_image', file: 'restauro-cadeira-depois-01.jpg' },
-      { pageSlug: 'sobre', sectionSlug: 'hero', field: 'hero_image', file: 'cadeira-servico.jpg' },
-      { pageSlug: 'sobre', sectionSlug: 'historia', field: 'section_image', file: 'galeria-cadeira-01.jpg' },
-      { pageSlug: 'contato', sectionSlug: 'hero', field: 'hero_image', file: 'cadeira-servico.jpg' },
+      { pageSlug: 'home', sectionSlug: 'hero', updates: { hero_image: 'cadeiras-hero.jpg' } },
+      { pageSlug: 'home', sectionSlug: 'intro', updates: { section_image: 'galeria-cadeira-01.jpg' } },
+      { pageSlug: 'cadeiras', sectionSlug: 'hero', updates: { hero_image: 'cadeiras-hero.jpg' } },
+      { pageSlug: 'cadeiras', sectionSlug: 'intro', updates: { section_image: 'cadeira-destaque.jpg' } },
+      { pageSlug: 'cortinados', sectionSlug: 'hero', updates: { hero_image: 'galeria-cortinado-01.jpg' } },
+      { pageSlug: 'cortinados', sectionSlug: 'intro', updates: { section_image: 'galeria-cortinado-02.jpg' } },
+      { pageSlug: 'pulpitos', sectionSlug: 'hero', updates: { hero_image: 'galeria-pulpito-01.jpg' } },
+      { pageSlug: 'pulpitos', sectionSlug: 'intro', updates: { section_image: 'pulpito-local-03.jpg' } },
+      { pageSlug: 'restauro', sectionSlug: 'hero', updates: { hero_image: 'restauro-sofa-depois.jpg' } },
+      { pageSlug: 'restauro', sectionSlug: 'intro', updates: { section_image: 'restauro-cadeira-depois-01.jpg' } },
+      { pageSlug: 'sobre', sectionSlug: 'hero', updates: { hero_image: 'cadeira-servico.jpg' } },
+      { pageSlug: 'sobre', sectionSlug: 'historia', updates: { section_image: 'galeria-cadeira-01.jpg' } },
+      { pageSlug: 'contato', sectionSlug: 'hero', updates: { hero_image: 'cadeira-servico.jpg' } },
     ]
 
     let count = 0
-    for (const { pageSlug, sectionSlug, field, file } of imageUpdates) {
+    for (const { pageSlug, sectionSlug, updates } of imageUpdates) {
       const { rows: pageRows } = await query(
         'SELECT id FROM pages WHERE slug = $1', [pageSlug],
       )
@@ -165,7 +166,9 @@ router.post('/restore-image-fields', requireAuth, async (req, res) => {
         ? JSON.parse(secRows[0].content)
         : { ...secRows[0].content }
 
-      content[field] = `${BASE}/${file}`
+      for (const [field, file] of Object.entries(updates)) {
+        content[field] = `${BASE}/${file}`
+      }
 
       await query(
         'UPDATE sections SET content = $1 WHERE id = $2',
