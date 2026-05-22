@@ -131,50 +131,57 @@ router.post('/fix-media-urls', requireAuth, async (req, res) => {
 
 router.post('/restore-image-fields', requireAuth, async (req, res) => {
   try {
-    const BASE = 'https://api.betaatelier.com/uploads'
-
-    const imageUpdates = [
-      { pageSlug: 'home', sectionSlug: 'hero', updates: { hero_image: 'cadeiras-hero.jpg' } },
-      { pageSlug: 'home', sectionSlug: 'intro', updates: { section_image: 'galeria-cadeira-01.jpg' } },
-      { pageSlug: 'cadeiras', sectionSlug: 'hero', updates: { hero_image: 'cadeiras-hero.jpg' } },
-      { pageSlug: 'cadeiras', sectionSlug: 'intro', updates: { section_image: 'cadeira-destaque.jpg' } },
-      { pageSlug: 'cortinados', sectionSlug: 'hero', updates: { hero_image: 'galeria-cortinado-01.jpg' } },
-      { pageSlug: 'cortinados', sectionSlug: 'intro', updates: { section_image: 'galeria-cortinado-02.jpg' } },
-      { pageSlug: 'pulpitos', sectionSlug: 'hero', updates: { hero_image: 'galeria-pulpito-01.jpg' } },
-      { pageSlug: 'pulpitos', sectionSlug: 'intro', updates: { section_image: 'pulpito-local-03.jpg' } },
-      { pageSlug: 'restauro', sectionSlug: 'hero', updates: { hero_image: 'restauro-sofa-depois.jpg' } },
-      { pageSlug: 'restauro', sectionSlug: 'intro', updates: { section_image: 'restauro-cadeira-depois-01.jpg' } },
-      { pageSlug: 'sobre', sectionSlug: 'hero', updates: { hero_image: 'cadeira-servico.jpg' } },
-      { pageSlug: 'sobre', sectionSlug: 'historia', updates: { section_image: 'galeria-cadeira-01.jpg' } },
-      { pageSlug: 'contato', sectionSlug: 'hero', updates: { hero_image: 'cadeira-servico.jpg' } },
-    ]
+    const imageMap = {
+      'cadeiras-hero.jpg': ['home/hero/hero_image', 'cadeiras/hero/hero_image'],
+      'cadeira-destaque.jpg': ['cadeiras/intro/section_image'],
+      'galeria-cortinado-01.jpg': ['cortinados/hero/hero_image'],
+      'galeria-cortinado-02.jpg': ['cortinados/intro/section_image'],
+      'galeria-pulpito-01.jpg': ['pulpitos/hero/hero_image'],
+      'pulpito-local-03.jpg': ['pulpitos/intro/section_image'],
+      'restauro-sofa-depois.jpg': ['restauro/hero/hero_image'],
+      'restauro-cadeira-depois-01.jpg': ['restauro/intro/section_image'],
+      'cadeira-servico.jpg': ['sobre/hero/hero_image', 'contato/hero/hero_image'],
+      'galeria-cadeira-01.jpg': ['sobre/historia/section_image'],
+    }
 
     let count = 0
-    for (const { pageSlug, sectionSlug, updates } of imageUpdates) {
-      const { rows: pageRows } = await query(
-        'SELECT id FROM pages WHERE slug = $1', [pageSlug],
+    for (const [originalName, targets] of Object.entries(imageMap)) {
+      const { rows: mediaRows } = await query(
+        'SELECT url FROM media WHERE original_name = $1 LIMIT 1',
+        [originalName],
       )
-      if (!pageRows[0]) continue
-
-      const { rows: secRows } = await query(
-        'SELECT id, content FROM sections WHERE page_id = $1 AND slug = $2',
-        [pageRows[0].id, sectionSlug],
-      )
-      if (!secRows[0]) continue
-
-      const content = typeof secRows[0].content === 'string'
-        ? JSON.parse(secRows[0].content)
-        : { ...secRows[0].content }
-
-      for (const [field, file] of Object.entries(updates)) {
-        content[field] = `${BASE}/${file}`
+      if (!mediaRows[0]) {
+        console.log(`[SKIP] ${originalName} nao encontrado no banco`)
+        continue
       }
+      const realUrl = mediaRows[0].url
 
-      await query(
-        'UPDATE sections SET content = $1 WHERE id = $2',
-        [JSON.stringify(content), secRows[0].id],
-      )
-      count++
+      for (const target of targets) {
+        const [pageSlug, sectionSlug, field] = target.split('/')
+        const { rows: pageRows } = await query(
+          'SELECT id FROM pages WHERE slug = $1', [pageSlug],
+        )
+        if (!pageRows[0]) continue
+
+        const { rows: secRows } = await query(
+          'SELECT id, content FROM sections WHERE page_id = $1 AND slug = $2',
+          [pageRows[0].id, sectionSlug],
+        )
+        if (!secRows[0]) continue
+
+        const content = typeof secRows[0].content === 'string'
+          ? JSON.parse(secRows[0].content)
+          : { ...secRows[0].content }
+
+        content[field] = realUrl
+
+        await query(
+          'UPDATE sections SET content = $1 WHERE id = $2',
+          [JSON.stringify(content), secRows[0].id],
+        )
+        count++
+        console.log(`[OK] ${pageSlug}/${sectionSlug}.${field} = ${realUrl}`)
+      }
     }
 
     res.json({ success: true, updated: count })

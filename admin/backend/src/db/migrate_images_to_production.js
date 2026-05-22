@@ -7,7 +7,7 @@ import fetch from 'node-fetch'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const BACKEND_URL = 'https://backend-beta-atelier-production.up.railway.app'
+const BACKEND_URL = 'https://api.betaatelier.com'
 const EMAIL = 'elisabetearede67@gmail.com'
 const PASSWORD = 'BetaAtelier2025'
 const IMAGES_DIR = join(__dirname, '../../../../src/assets/images')
