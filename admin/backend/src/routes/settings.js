@@ -129,4 +129,55 @@ router.post('/fix-media-urls', requireAuth, async (req, res) => {
   }
 })
 
+router.post('/restore-image-fields', requireAuth, async (req, res) => {
+  try {
+    const BASE = 'https://api.betaatelier.com/uploads'
+
+    const imageUpdates = [
+      { pageSlug: 'home', sectionSlug: 'hero', field: 'hero_image', file: 'cadeiras-hero.jpg' },
+      { pageSlug: 'cadeiras', sectionSlug: 'hero', field: 'hero_image', file: 'cadeiras-hero.jpg' },
+      { pageSlug: 'cadeiras', sectionSlug: 'intro', field: 'section_image', file: 'cadeira-destaque.jpg' },
+      { pageSlug: 'cortinados', sectionSlug: 'hero', field: 'hero_image', file: 'galeria-cortinado-01.jpg' },
+      { pageSlug: 'cortinados', sectionSlug: 'intro', field: 'section_image', file: 'galeria-cortinado-02.jpg' },
+      { pageSlug: 'pulpitos', sectionSlug: 'hero', field: 'hero_image', file: 'galeria-pulpito-01.jpg' },
+      { pageSlug: 'pulpitos', sectionSlug: 'intro', field: 'section_image', file: 'pulpito-local-03.jpg' },
+      { pageSlug: 'restauro', sectionSlug: 'hero', field: 'hero_image', file: 'restauro-sofa-depois.jpg' },
+      { pageSlug: 'restauro', sectionSlug: 'intro', field: 'section_image', file: 'restauro-cadeira-depois-01.jpg' },
+      { pageSlug: 'sobre', sectionSlug: 'hero', field: 'hero_image', file: 'cadeira-servico.jpg' },
+      { pageSlug: 'sobre', sectionSlug: 'historia', field: 'section_image', file: 'galeria-cadeira-01.jpg' },
+      { pageSlug: 'contato', sectionSlug: 'hero', field: 'hero_image', file: 'cadeira-servico.jpg' },
+    ]
+
+    let count = 0
+    for (const { pageSlug, sectionSlug, field, file } of imageUpdates) {
+      const { rows: pageRows } = await query(
+        'SELECT id FROM pages WHERE slug = $1', [pageSlug],
+      )
+      if (!pageRows[0]) continue
+
+      const { rows: secRows } = await query(
+        'SELECT id, content FROM sections WHERE page_id = $1 AND slug = $2',
+        [pageRows[0].id, sectionSlug],
+      )
+      if (!secRows[0]) continue
+
+      const content = typeof secRows[0].content === 'string'
+        ? JSON.parse(secRows[0].content)
+        : { ...secRows[0].content }
+
+      content[field] = `${BASE}/${file}`
+
+      await query(
+        'UPDATE sections SET content = $1 WHERE id = $2',
+        [JSON.stringify(content), secRows[0].id],
+      )
+      count++
+    }
+
+    res.json({ success: true, updated: count })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
