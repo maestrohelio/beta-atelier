@@ -183,4 +183,28 @@ router.post('/restore-image-fields', requireAuth, async (req, res) => {
   }
 })
 
+router.get('/debug-uploads', requireAuth, async (_req, res) => {
+  try {
+    const { readdirSync, existsSync } = await import('fs')
+    const { resolve } = await import('path')
+
+    const uploadDir = process.env.UPLOAD_DIR ?? './uploads'
+    const absPath = resolve(uploadDir)
+
+    const exists = existsSync(absPath)
+    const files = exists ? readdirSync(absPath).slice(0, 10) : []
+
+    res.json({
+      uploadDir,
+      absPath,
+      exists,
+      fileCount: exists ? readdirSync(absPath).length : 0,
+      sampleFiles: files,
+      cwd: process.cwd(),
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
